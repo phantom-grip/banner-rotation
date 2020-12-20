@@ -15,16 +15,24 @@ type Storage interface {
 	getStats(slotId, socialGroupId int) ([]Stat, error)
 }
 
-func addBannerPlacement(storage Storage, bannerId, slotId int) error {
-	return storage.addBannerPlacement(bannerId, slotId)
+type BannerRecomender struct {
+	storage Storage
 }
 
-func removeBannerPlacement(storage Storage, bannerId, slotId int) error {
-	return storage.removeBannerPlacement(bannerId, slotId)
+func NewBannerRecomender(storage Storage) *BannerRecomender {
+	return &BannerRecomender{storage: storage}
 }
 
-func addClick(storage Storage, bannerId, slotId, socialGroup int) error {
-	registered, err := storage.isBannerRegistered(bannerId, slotId)
+func (bc BannerRecomender) addBannerPlacement(bannerId, slotId int) error {
+	return bc.storage.addBannerPlacement(bannerId, slotId)
+}
+
+func (bc BannerRecomender) removeBannerPlacement(bannerId, slotId int) error {
+	return bc.storage.removeBannerPlacement(bannerId, slotId)
+}
+
+func (bc BannerRecomender) addClick(bannerId, slotId, socialGroup int) error {
+	registered, err := bc.storage.isBannerRegistered(bannerId, slotId)
 	if err != nil {
 		return err
 	}
@@ -33,7 +41,7 @@ func addClick(storage Storage, bannerId, slotId, socialGroup int) error {
 		return errors.New("banner placement wasn't found")
 	}
 
-	err = storage.addClick(bannerId, slotId, socialGroup)
+	err = bc.storage.addClick(bannerId, slotId, socialGroup)
 	if err != nil {
 		return err
 	}
@@ -41,8 +49,8 @@ func addClick(storage Storage, bannerId, slotId, socialGroup int) error {
 	return nil
 }
 
-func getBannerToDisplay(storage Storage, slotId, socialGroupId int) (int, error) {
-	stats, err := storage.getStats(slotId, socialGroupId)
+func (bc BannerRecomender) getBannerToDisplay(slotId, socialGroupId int) (int, error) {
+	stats, err := bc.storage.getStats(slotId, socialGroupId)
 	if err != nil {
 		return 0, err
 	}
@@ -68,7 +76,7 @@ func getBannerToDisplay(storage Storage, slotId, socialGroupId int) (int, error)
 	}
 
 	bannerId := stats[maxIndex].bannerId
-	err = storage.addDisplay(bannerId, slotId, socialGroupId)
+	err = bc.storage.addDisplay(bannerId, slotId, socialGroupId)
 	if err != nil {
 		return 0, err
 	}
