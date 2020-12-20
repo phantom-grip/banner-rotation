@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"log"
 	"math/rand"
 	"time"
 )
@@ -23,15 +24,15 @@ func NewBannerRecomender(storage Storage) *BannerRecomender {
 	return &BannerRecomender{storage: storage}
 }
 
-func (bc BannerRecomender) addBannerPlacement(bannerId, slotId int) error {
+func (bc *BannerRecomender) addBannerPlacement(bannerId, slotId int) error {
 	return bc.storage.addBannerPlacement(bannerId, slotId)
 }
 
-func (bc BannerRecomender) removeBannerPlacement(bannerId, slotId int) error {
+func (bc *BannerRecomender) removeBannerPlacement(bannerId, slotId int) error {
 	return bc.storage.removeBannerPlacement(bannerId, slotId)
 }
 
-func (bc BannerRecomender) addClick(bannerId, slotId, socialGroup int) error {
+func (bc *BannerRecomender) addClick(bannerId, slotId, socialGroup int) error {
 	registered, err := bc.storage.isBannerRegistered(bannerId, slotId)
 	if err != nil {
 		return err
@@ -49,7 +50,7 @@ func (bc BannerRecomender) addClick(bannerId, slotId, socialGroup int) error {
 	return nil
 }
 
-func (bc BannerRecomender) getBannerToDisplay(slotId, socialGroupId int) (int, error) {
+func (bc *BannerRecomender) getBannerToDisplay(slotId, socialGroupId int) (int, error) {
 	stats, err := bc.storage.getStats(slotId, socialGroupId)
 	if err != nil {
 		return 0, err
@@ -65,6 +66,9 @@ func (bc BannerRecomender) getBannerToDisplay(slotId, socialGroupId int) (int, e
 	rand.Seed(time.Now().UnixNano())
 	n := rand.Intn(100)
 
+	log.Println(len(stats))
+	log.Println(maxIndex)
+
 	if n > 70 {
 		for {
 			i := rand.Intn(len(stats))
@@ -77,6 +81,7 @@ func (bc BannerRecomender) getBannerToDisplay(slotId, socialGroupId int) (int, e
 
 	bannerId := stats[maxIndex].bannerId
 	err = bc.storage.addDisplay(bannerId, slotId, socialGroupId)
+
 	if err != nil {
 		return 0, err
 	}
