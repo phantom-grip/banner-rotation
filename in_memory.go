@@ -1,7 +1,5 @@
 package main
 
-import "log"
-
 type Stat struct {
 	bannerId int
 	prob     int
@@ -52,6 +50,7 @@ func (db *DBMemory) addClick(bannerId, slotId, socialGroupId int) error {
 	for i, cd := range db.clicksDisplays {
 		if cd.bannerId == bannerId && cd.slotId == slotId && cd.socialGroupId == socialGroupId {
 			db.clicksDisplays[i].clicks += 1
+			return nil
 		}
 	}
 
@@ -67,11 +66,8 @@ func (db *DBMemory) addClick(bannerId, slotId, socialGroupId int) error {
 }
 
 func (db *DBMemory) addDisplay(bannerId, slotId, socialGroupId int) error {
-	log.Println("Hello")
 	for i, cd := range db.clicksDisplays {
-		log.Println("New display: ", i)
 		if cd.bannerId == bannerId && cd.slotId == slotId && cd.socialGroupId == socialGroupId {
-			log.Println("Addind display")
 			db.clicksDisplays[i].displays += 1
 			return nil
 		}
@@ -112,12 +108,24 @@ func (db *DBMemory) removeBannerPlacement(bannerId, slotId int) error {
 	return nil
 }
 
+func (db *DBMemory) getBannersForSlot(slotId int) ([]int, error) {
+	// TODO: should be an id
+	var banners []int
+
+	for _, bp := range db.bannerPlacements {
+		if bp.slotId == slotId {
+			banners = append(banners, bp.bannerId)
+		}
+	}
+
+	return banners, nil
+}
+
 func (db *DBMemory) getStats(slotId, socialGroupId int) ([]Stat, error) {
 	stats := make([]Stat, 0)
 
 	for _, cd := range db.clicksDisplays {
 		if cd.slotId == slotId && cd.socialGroupId == socialGroupId {
-			log.Println("In if")
 			prob := 0
 
 			if cd.displays != 0 {
@@ -129,10 +137,7 @@ func (db *DBMemory) getStats(slotId, socialGroupId int) ([]Stat, error) {
 				prob:     prob,
 			})
 		}
-		log.Println("Out of if")
 	}
-
-	log.Println("v+%", stats)
 
 	return stats, nil
 }

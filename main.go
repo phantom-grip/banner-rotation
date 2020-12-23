@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"log"
 	"math/rand"
 	"time"
 )
@@ -14,6 +13,7 @@ type Storage interface {
 	addClick(bannerId, slotId, socialGroupId int) error
 	addDisplay(bannerId, slotId, socialGroupId int) error
 	getStats(slotId, socialGroupId int) ([]Stat, error)
+	getBannersForSlot(slotId int) ([]int, error)
 }
 
 type BannerRecomender struct {
@@ -50,10 +50,39 @@ func (bc *BannerRecomender) addClick(bannerId, slotId, socialGroup int) error {
 	return nil
 }
 
+func extendStats(stats []Stat, banners []int) []Stat {
+
+	for _, bannerId := range banners {
+		found := false
+
+		for _, stat := range stats {
+			if stat.bannerId == bannerId {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			stats = append(stats, Stat{
+				bannerId: bannerId,
+				prob:     0,
+			})
+		}
+	}
+
+	return stats
+}
+
 func (bc *BannerRecomender) getBannerToDisplay(slotId, socialGroupId int) (int, error) {
 	stats, err := bc.storage.getStats(slotId, socialGroupId)
 	if err != nil {
 		return 0, err
+	}
+
+	bannersForSlot, err := bc.storage.getBannersForSlot(slotId)
+
+	if len(bannersForSlot) > len(stats) {
+		stats = extendStats(stats, bannersForSlot)
 	}
 
 	maxIndex := 0
@@ -65,9 +94,6 @@ func (bc *BannerRecomender) getBannerToDisplay(slotId, socialGroupId int) (int, 
 
 	rand.Seed(time.Now().UnixNano())
 	n := rand.Intn(100)
-
-	log.Println(len(stats))
-	log.Println(maxIndex)
 
 	if n > 70 {
 		for {
